@@ -7,6 +7,8 @@
   "scripts": {
     "dev": "rspack serve --host 127.0.0.1",
     "build": "tsc -b && rspack build",
+    "test": "vitest run",
+    "ci": "npm run typecheck && npm run harness && npm test && npm run build",
     "typecheck": "tsc -b --pretty false",
     "harness": "typescript-project-harness .",
     "harness:json": "typescript-project-harness --json .",
@@ -15,7 +17,8 @@
     "preview": "rspack serve --mode production --host 127.0.0.1"
   },
   "dependencies": {
-    "orgize": "git+https://github.com/tao3k/orgize-wasm.git#c399578716718cddb70dd15dcbf5722ff25f371b",
+    "orgize": "git+https://github.com/tao3k/orgize-wasm.git#eed0cbaa8ae342fa976f7ce1a4b8eae98da807d0",
+    "photoswipe": "^5.4.4",
     "smol-toml": "^1.6.1"
   },
   "devDependencies": {
@@ -23,6 +26,7 @@
     "@rspack/core": "^2.0.3",
     "@rspack/dev-server": "^2.0.1",
     "typescript": "^5.9.3",
-    "typescript-lang-project-harness": "git+https://github.com/tao3k/typescript-lang-project-harness.git#04524b55706e77080e30795b9b7cfe014d24cfce"
+    "typescript-lang-project-harness": "git+https://github.com/tao3k/typescript-lang-project-harness.git#04524b55706e77080e30795b9b7cfe014d24cfce",
+    "vitest": "^4.1.7"
   }
 }

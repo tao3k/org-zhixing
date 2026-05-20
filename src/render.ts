@@ -2,10 +2,19 @@ import type { OrgizeLintFindingDto, OrgizeViewIndexRecordDto } from "orgize/dto"
 import type { AgendaPanelKey } from "./agendaTypes";
 import type { AgendaModeKey } from "./config";
 import { renderAgenda } from "./agendaRender";
+import { rewriteAttachmentLinks } from "./attachmentHtmlRewrite";
 import { renderAttachmentGallery } from "./attachmentGalleryRender";
 import { renderAgentCapture } from "./captureRender";
 import { renderAgentMemory } from "./memoryRender";
-import { blogArticles, taggedRecords, type OrgizeDocumentView, type ViewKey } from "./model";
+import { blogArticles, noteRecords, type OrgizeDocumentView, type ViewKey } from "./model";
+import {
+  augmentOrgHtmlMetadata,
+  matchHeadingRecord,
+  normalizeDisplayText,
+  sectionRecords,
+  sectionTitle,
+  type SectionRecord,
+} from "./orgHtmlMetadata";
 
 type TimingStats = {
   parseMs?: number;
@@ -34,6 +43,7 @@ type RenderViewOptions = {
 type ArticleTocItem = {
   id: string;
   level: number;
+  tags: string[];
   title: string;
 };
 
@@ -70,11 +80,12 @@ export const renderView = ({
         articleMessage,
         blogArticleRangeStart,
         blogZenMode,
+        sourceFile,
       );
     case "gallery":
       return renderAttachmentGallery(document, sourceFile);
     case "records":
-      return renderRecords(taggedRecords(document, "record"), "Records");
+      return renderRecords(noteRecords(document), "Notes");
     case "memory":
       return renderAgentMemory(document.agentMemory);
     case "agenda":
@@ -94,13 +105,14 @@ const renderBlogReader = (
   articleMessage: string,
   selectedRangeStart: number | null,
   zenMode: boolean,
+  sourceFile: string | undefined,
 ): string => {
   const articles = blogArticles(document);
   const selected =
     articles.find((article) => article.rangeStart === selectedRangeStart) ?? articles[0];
   const selectedArticle = selected
-    ? prepareRenderedArticle(articleHtml, selected)
-    : prepareArticleHtml(articleHtml);
+    ? prepareRenderedArticle(articleHtml, selected, document, sourceFile)
+    : prepareArticleHtml(articleHtml, document, sourceFile);
   const emptyMessage =
     articleMessage ||
     (articles.length === 0
@@ -177,9 +189,17 @@ const renderArticleToc = (items: ArticleTocItem[]): string => `
 
 const renderTocItem = (item: ArticleTocItem): string => `
   <li class="toc-level-${Math.min(Math.max(item.level, 1), 6)}">
-    <a href="#${escapeHtml(item.id)}">${escapeHtml(item.title)}</a>
+    <a href="#${escapeHtml(item.id)}">
+      <span>${escapeHtml(item.title)}</span>
+      ${renderTocTags(item.tags)}
+    </a>
   </li>
 `;
+
+const renderTocTags = (tags: string[]): string =>
+  tags.length > 0
+    ? `<span class="toc-tags">${tags.map((tag) => `<em>${escapeHtml(tag)}</em>`).join("")}</span>`
+    : "";
 
 const readerSummary = (articleCount: number, recordCount: number, agendaCount: number): string =>
   `${articleCount} posts from the current Org source, with ${recordCount} records and ${agendaCount} agenda signals still available.`;
@@ -196,6 +216,8 @@ const propertyValue = (record: OrgizeViewIndexRecordDto, key: string): string | 
 const prepareRenderedArticle = (
   articleHtml: string,
   article: OrgizeViewIndexRecordDto,
+  document: OrgizeDocumentView,
+  sourceFile: string | undefined,
 ): PreparedArticle => {
   if (!articleHtml) {
     return { html: "", toc: [] };
@@ -203,11 +225,11 @@ const prepareRenderedArticle = (
   const parser = new DOMParser();
   const parsed = parser.parseFromString(articleHtml, "text/html");
   const root = parsed.querySelector("main") ?? parsed.body;
-  const heading = [...root.querySelectorAll("h1,h2,h3,h4,h5,h6")].find(
+  const heading = [...root.querySelectorAll<HTMLHeadingElement>("h1,h2,h3,h4,h5,h6")].find(
     (candidate) => normalizeHeading(candidate.textContent) === normalizeHeading(article.title),
   );
   if (!heading) {
-    return prepareArticleHtml(articleHtml);
+    return prepareArticleHtml(articleHtml, document, sourceFile);
   }
   const level = headingLevel(heading);
   const container = parsed.createElement("div");
@@ -217,34 +239,58 @@ const prepareRenderedArticle = (
     container.append(next.cloneNode(true));
     next = next.nextElementSibling;
   }
-  return prepareArticleHtml(container.innerHTML);
+  return prepareArticleHtml(container.innerHTML, document, sourceFile);
 };
 
-const prepareArticleHtml = (html: string): PreparedArticle => {
+const prepareArticleHtml = (
+  html: string,
+  document: OrgizeDocumentView,
+  sourceFile: string | undefined,
+): PreparedArticle => {
   if (!html) {
     return { html: "", toc: [] };
   }
   const parser = new DOMParser();
   const parsed = parser.parseFromString(html, "text/html");
   const body = parsed.body;
-  const headings = [...body.querySelectorAll("h1,h2,h3,h4,h5,h6")];
+  const headings = [...body.querySelectorAll<HTMLHeadingElement>("h1,h2,h3,h4,h5,h6")];
   const firstHeading = headings[0] ?? null;
   const toc: ArticleTocItem[] = [];
   const usedIds = new Set<string>();
+  const records = sectionRecords(document);
+  const usedRecords = new Set<SectionRecord>();
 
   for (const heading of headings) {
-    const title = normalizeHeading(heading.textContent);
+    const record = matchHeadingRecord(heading, records, usedRecords);
+    if (record) {
+      usedRecords.add(record);
+    }
+    const title = tocHeadingTitle(heading, record);
     if (!title) {
       continue;
     }
     const id = uniqueHeadingId(title, usedIds);
     heading.id = id;
     if (heading !== firstHeading) {
-      toc.push({ id, title, level: headingLevel(heading) });
+      toc.push({ id, level: headingLevel(heading), tags: tocHeadingTags(record), title });
     }
   }
+  rewriteAttachmentLinks(body, document, sourceFile);
+  augmentOrgHtmlMetadata(body, document);
   return { html: body.innerHTML, toc };
 };
+
+const tocHeadingTitle = (heading: HTMLHeadingElement, record: SectionRecord | null): string =>
+  normalizeDisplayText(
+    record ? sectionTitle(record) : stripOrgHeadingTags(heading.textContent ?? ""),
+  );
+
+const tocHeadingTags = (record: SectionRecord | null): string[] => [
+  ...new Set((record?.tags.length ? record.tags : (record?.effectiveTags ?? [])).filter(Boolean)),
+];
+
+const stripOrgHeadingTags = (value: string): string =>
+  value.replace(/\s+(:[A-Za-z0-9_@#%]+)+:\s*$/, "");
 
 export const renderStats = (
   document: OrgizeDocumentView | null,

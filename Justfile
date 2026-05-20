@@ -21,13 +21,14 @@ harness-json:
 harness-agent-snapshot:
     npm run harness:agent-snapshot
 
+test:
+    npm test
+
 build:
     npm run build
 
 check:
-    npm run typecheck
-    npm run harness
-    npm run build
+    npm run ci
 
 perf repeat="1" iterations="20":
     npm run perf -- --repeat={{repeat}} --iterations={{iterations}}

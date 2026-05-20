@@ -22,6 +22,13 @@ export const renderAgenda = (
     return renderAgendaFallback(agendaItems(document));
   }
   if (workspace.totalCandidates === 0) {
+    const fallbackItems = agendaItems(document);
+    if (fallbackItems.length > 0) {
+      return renderAgendaFallback(
+        fallbackItems,
+        `No agenda rows in ${workspace.rangeLabel}; showing source planning data.`,
+      );
+    }
     return `<div class="empty">No agenda rows in ${escapeHtml(workspace.rangeLabel)}.</div>`;
   }
   const activeRuleId = activeAgendaRuleId(workspace, selectedRuleId);
@@ -109,13 +116,16 @@ const activeAgendaRuleId = (
   );
 };
 
-const renderAgendaFallback = (items: AgendaItem[]): string => {
+const renderAgendaFallback = (
+  items: AgendaItem[],
+  message = "Projecting parser-owned agenda intelligence...",
+): string => {
   if (items.length === 0) {
     return `<div class="empty">No scheduled, deadline, or closed planning data found.</div>`;
   }
   return `
     <section class="agenda-loading">
-      <div class="empty">Projecting parser-owned agenda intelligence...</div>
+      <div class="empty">${escapeHtml(message)}</div>
       <ol class="agenda-list">${items.map(renderFallbackAgendaItem).join("")}</ol>
     </section>
   `;

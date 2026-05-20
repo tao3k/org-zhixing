@@ -1,3 +1,5 @@
+@import "photoswipe/style.css";
+
 :root {
   color: #172026;
   background: #f6f7f9;
@@ -554,13 +556,34 @@ nav button.active {
 }
 
 .blog-toc a {
-  display: block;
+  display: grid;
+  gap: 5px;
   border-radius: 6px;
   padding: 6px 8px;
   color: #415064;
   font-size: 0.82rem;
   line-height: 1.35;
   text-decoration: none;
+}
+
+.blog-toc a > span:first-child {
+  min-width: 0;
+}
+
+.toc-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.toc-tags em {
+  border-radius: 999px;
+  padding: 2px 6px;
+  color: #5e4508;
+  background: #fff2cc;
+  font-size: 0.68rem;
+  font-style: normal;
+  font-weight: 820;
 }
 
 .blog-toc a:hover {
@@ -3383,6 +3406,95 @@ code {
   color: #1f5fbf;
   text-decoration-thickness: 0.08em;
   text-underline-offset: 0.18em;
+}
+
+.rendered-html img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  margin: 16px auto;
+  border-radius: 8px;
+  box-shadow: 0 16px 38px rgb(22 33 49 / 10%);
+}
+
+.org-section-meta {
+  display: grid;
+  gap: 8px;
+  margin: 8px 0 16px;
+  padding: 10px 12px;
+  border: 1px solid #dbe5ee;
+  border-radius: 8px;
+  background: #f7fafc;
+}
+
+.org-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin: 0;
+}
+
+.org-meta-row:empty {
+  display: none;
+}
+
+.org-meta-chip,
+.org-meta-tag,
+.org-meta-row--properties div {
+  display: inline-flex;
+  align-items: center;
+  min-width: 0;
+  border-radius: 999px;
+  padding: 4px 8px;
+  font-size: 0.76rem;
+  line-height: 1.25;
+}
+
+.org-meta-chip {
+  color: #253647;
+  background: #e8eef5;
+}
+
+.org-meta-chip b {
+  margin-right: 4px;
+  font-weight: 900;
+}
+
+.org-meta-chip--scheduled {
+  color: #1c4c39;
+  background: #e4f3e8;
+}
+
+.org-meta-chip--deadline {
+  color: #87351f;
+  background: #ffe8dc;
+}
+
+.org-meta-chip--closed {
+  color: #4c5968;
+  background: #edf0f4;
+}
+
+.org-meta-tag {
+  color: #4d3c0b;
+  background: #fff2cc;
+  font-weight: 820;
+}
+
+.org-meta-row--properties div {
+  gap: 5px;
+  color: #243244;
+  background: #eef5fb;
+}
+
+.org-meta-row--properties dt {
+  color: #5b6979;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.org-meta-row--properties dd {
+  margin: 0;
 }
 
 .rendered-html code,

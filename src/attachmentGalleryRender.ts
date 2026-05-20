@@ -1,4 +1,4 @@
-import { publicAssetUrl } from "./config";
+import { attachmentPublicUrl, basename } from "./attachmentPaths";
 import {
   attachmentDisplayRecords,
   type AttachmentDisplayRecord,
@@ -27,7 +27,7 @@ export const renderAttachmentGallery = (
     <section class="attachment-gallery" aria-label="Attachment gallery">
       ${renderAttachmentGalleryHeader(records.length, imageCount, inventory.entries.length)}
       <div class="attachment-grid">
-        ${records.map((record) => renderAttachmentCard(record, sourceFile)).join("")}
+        ${records.map((record, index) => renderAttachmentCard(record, sourceFile, index)).join("")}
       </div>
     </section>
   `;
@@ -57,18 +57,30 @@ const renderAttachmentGalleryHeader = (
 const renderAttachmentCard = (
   record: AttachmentDisplayRecord,
   sourceFile: string | undefined,
+  index: number,
 ): string => {
-  const title = record.sectionTitle || attachmentBasename(record.linkPath);
+  const title = attachmentSectionTitle(record) || basename(record.linkPath) || "Attachment";
+  const outline = attachmentOutlinePath(record).join(" / ") || record.directoryPath;
   const url = attachmentPublicUrl(record, sourceFile);
   const tags = [...new Set(record.effectiveTags)].slice(0, 5);
   return `
     <article class="attachment-card">
-      <a href="${escapeHtml(url)}" target="_blank" rel="noreferrer">
+      <a
+        href="${escapeHtml(url)}"
+        data-attachment-open
+        data-attachment-index="${index}"
+        data-attachment-kind="${escapeHtml(record.mediaKind)}"
+        data-attachment-title="${escapeHtml(title)}"
+        data-attachment-outline="${escapeHtml(outline)}"
+        data-cropped="true"
+        target="_blank"
+        rel="noreferrer"
+      >
         ${renderAttachmentMedia(record, url, title)}
         <div class="attachment-card-body">
           <span>${escapeHtml(record.mediaKind)}</span>
           <h3>${escapeHtml(title)}</h3>
-          <p>${escapeHtml(record.outlinePath.join(" / ") || record.directoryPath)}</p>
+          <p>${escapeHtml(outline)}</p>
           <div class="meta-row">
             ${tags.map((tag) => `<span>${escapeHtml(tag)}</span>`).join("")}
           </div>
@@ -84,49 +96,17 @@ const renderAttachmentMedia = (
   title: string,
 ): string =>
   record.mediaKind === "image"
-    ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async">`
+    ? `<img src="${escapeHtml(url)}" alt="${escapeHtml(title)}" loading="lazy" decoding="async" data-attachment-thumbnail>`
     : `<div class="attachment-file-preview">${escapeHtml(record.mediaKind.toUpperCase())}</div>`;
 
-const attachmentPublicUrl = (
-  record: AttachmentDisplayRecord,
-  sourceFile: string | undefined,
-): string => publicAssetUrl(attachmentPublicPath(record, sourceFile)).toString();
-
-const attachmentPublicPath = (
-  record: AttachmentDisplayRecord,
-  sourceFile: string | undefined,
-): string => {
-  const directoryPath = normalizePublicPath(record.directoryPath);
-  const linkPath = normalizePublicPath(record.linkPath);
-  const joined = joinPath(directoryPath, linkPath);
-  const sourceRoot = sourceFile ? normalizePublicPath(sourceFile).split("/")[0] : "";
-  if (!sourceFile || (sourceRoot && directoryPath.startsWith(`${sourceRoot}/`))) {
-    return joined;
-  }
-  return joinPath(dirname(sourceFile), joined);
+const attachmentSectionTitle = (record: AttachmentDisplayRecord): string => {
+  const display = record as AttachmentDisplayRecord & { sectionTitleText?: string };
+  return display.sectionTitleText ?? record.sectionTitle;
 };
 
-const normalizePublicPath = (value: string): string =>
-  value
-    .replace(/^.*\/public\//, "")
-    .replace(/^\.?\//, "")
-    .replace(/^\/+/, "");
-
-const dirname = (path: string): string => {
-  const normalized = normalizePublicPath(path);
-  const slash = normalized.lastIndexOf("/");
-  return slash === -1 ? "" : normalized.slice(0, slash);
-};
-
-const joinPath = (...parts: string[]): string =>
-  parts
-    .map((part) => part.replace(/^\/+|\/+$/g, ""))
-    .filter(Boolean)
-    .join("/");
-
-const attachmentBasename = (path: string): string => {
-  const normalized = normalizePublicPath(path);
-  return normalized.split("/").filter(Boolean).at(-1) ?? "Attachment";
+const attachmentOutlinePath = (record: AttachmentDisplayRecord): string[] => {
+  const display = record as AttachmentDisplayRecord & { outlinePathText?: string[] };
+  return display.outlinePathText ?? record.outlinePath;
 };
 
 const escapeHtml = (value: string | number): string =>

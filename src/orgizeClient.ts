@@ -8,6 +8,7 @@ import type {
   OrgizeLintResponseDto,
   OrgizeMemoryResponseDto,
   OrgizeProjectionName,
+  OrgizeSectionIndexResponseDto,
   OrgizeViewIndexResponseDto,
 } from "orgize/dto";
 import type { OrgizeRenderFormat, OrgizeWorkerMessage, OrgizeWorkerRequest } from "orgize/worker";
@@ -91,6 +92,14 @@ export class OrgizeSession {
     return this.#request<T>({
       command: "projection",
       projection,
+    });
+  }
+
+  sectionIndex(sourceFile?: string): Promise<TimedResult<OrgizeSectionIndexResponseDto>> {
+    return this.#requestTimed<OrgizeSectionIndexResponseDto>({
+      command: "projection",
+      projection: "sectionIndex",
+      sourceFile,
     });
   }
 

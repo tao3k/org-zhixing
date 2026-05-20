@@ -1,7 +1,5 @@
 import {
-  blogArticleFromEvent,
   blogCacheKey,
-  blogZenModeFromEvent,
   clearBlogCache,
   initialBlogReaderState,
   readerModeFor,
@@ -22,14 +20,10 @@ import {
   type SourceItem,
 } from "./config";
 import type { AgendaPanelKey } from "./agendaTypes";
-import {
-  isAgendaMode,
-  isAgendaPanel,
-  resolveInitialAgendaPanel,
-  resolveInitialAgendaRuleId,
-} from "./agendaState";
+import { resolveInitialAgendaPanel, resolveInitialAgendaRuleId } from "./agendaState";
 import { createTabButtons } from "./appChrome";
 import { bindAppDom, type AppDomNodes } from "./appDom";
+import { bindAppEvents } from "./appEvents";
 import { createCaptureApplyPreview } from "./captureApplyPreview";
 import { createAgentCaptureRequest } from "./captureModel";
 import {
@@ -102,142 +96,64 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
   }
 
   #bindEvents(): void {
-    const listenerOptions = { signal: this.#abortController.signal };
-    this.#dom.tabs.addEventListener(
-      "click",
-      (event) => {
-        const target = (event.target as HTMLElement).closest<HTMLButtonElement>(
-          "button[data-view]",
-        );
-        if (!target) {
-          return;
-        }
-        this.#currentView = target.dataset.view as ViewKey;
+    bindAppEvents(this.#dom, this.#abortController.signal, {
+      onView: (view) => {
+        this.#currentView = view;
         this.#updateActiveTab();
         this.#writeUrlState();
         void this.#refreshActiveProjection();
       },
-      listenerOptions,
-    );
-
-    this.#dom.sourceSelect.addEventListener(
-      "change",
-      () => {
+      onSourceSelect: (sourceFile) => {
         if (!this.#siteConfig) {
           return;
         }
-        const nextSource = sourceFromUserPath(this.#siteConfig, this.#dom.sourceSelect.value);
+        const nextSource = sourceFromUserPath(this.#siteConfig, sourceFile);
         this.#blog.articleRangeStart = null;
         this.#writeUrlState(nextSource.file);
         void this.#loadSource(nextSource);
       },
-      listenerOptions,
-    );
-
-    this.#dom.sourceFeed.addEventListener(
-      "click",
-      (event) => {
+      onSourceFeed: (sourceId) => {
         if (!this.#siteConfig) return;
-        const target = (event.target as HTMLElement).closest<HTMLButtonElement>(
-          "button[data-source-id]",
-        );
-        if (!target?.dataset.sourceId) return;
-        const nextSource = sourceFromUserPath(this.#siteConfig, target.dataset.sourceId);
+        const nextSource = sourceFromUserPath(this.#siteConfig, sourceId);
         this.#agendaRuleId = null;
         this.#blog.articleRangeStart = null;
         this.#writeUrlState(nextSource.file);
         void this.#loadSource(nextSource);
       },
-      listenerOptions,
-    );
-
-    this.#dom.view.addEventListener(
-      "click",
-      (event) => {
-        const target = (event.target as HTMLElement).closest<HTMLButtonElement>(
-          "button[data-agenda-mode]",
-        );
-        const mode = target?.dataset.agendaMode;
-        if (!isAgendaMode(mode)) {
-          return;
-        }
+      onAgendaMode: (mode) => {
         this.#agendaMode = mode;
         this.#agendaRuleId = null;
         this.#clearAgendaCache();
         this.#writeUrlState();
         this.#render();
       },
-      listenerOptions,
-    );
-
-    this.#dom.view.addEventListener(
-      "click",
-      (event) => {
-        const target = (event.target as HTMLElement).closest<HTMLButtonElement>(
-          "button[data-agenda-panel]",
-        );
-        const panel = target?.dataset.agendaPanel;
-        if (!isAgendaPanel(panel)) {
-          return;
-        }
+      onAgendaPanel: (panel) => {
         this.#agendaPanel = panel;
         this.#clearAgendaCache();
         this.#writeUrlState();
         this.#render();
       },
-      listenerOptions,
-    );
-
-    this.#dom.view.addEventListener(
-      "click",
-      (event) => {
-        const target = (event.target as HTMLElement).closest<HTMLElement>(
-          "[data-agenda-rule-select]",
-        );
-        const ruleId = target?.dataset.agendaRuleSelect;
-        if (!ruleId) {
-          return;
-        }
+      onAgendaRule: (ruleId) => {
         this.#agendaRuleId = ruleId;
         this.#clearAgendaCache();
         this.#writeUrlState();
         this.#render();
         this.#scrollAgendaRuleIntoView(ruleId);
       },
-      listenerOptions,
-    );
-
-    this.#dom.view.addEventListener(
-      "click",
-      (event) => {
-        const rangeStart = blogArticleFromEvent(event);
-        if (rangeStart === null) {
-          return;
-        }
+      onBlogArticle: (rangeStart) => {
         this.#blog.articleRangeStart = rangeStart;
         clearBlogCache(this.#viewCache);
         this.#writeUrlState();
         this.#render();
       },
-      listenerOptions,
-    );
-
-    this.#dom.view.addEventListener(
-      "click",
-      (event) => {
-        const zenMode = blogZenModeFromEvent(event);
-        if (zenMode === null) {
-          return;
-        }
+      onBlogZenMode: (zenMode) => {
         this.#blog.zenMode = zenMode;
         clearBlogCache(this.#viewCache);
         this.#writeUrlState();
         this.#render();
       },
-      listenerOptions,
-    );
-
-    window.addEventListener("beforeunload", () => this.dispose(), listenerOptions);
+      onDispose: () => this.dispose(),
+    });
   }
 
   async #boot(): Promise<void> {
@@ -280,8 +196,16 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     if (version !== this.#documentVersion) {
       return;
     }
+    const semanticSections = await this.#session.sectionIndex(nextSource.sourceFile);
+    if (version !== this.#documentVersion) {
+      return;
+    }
     this.#timings = { parseMs: parsed.durationMs };
-    this.#documentView = createDocumentView(parsed.value.records);
+    this.#documentView = createDocumentView(
+      parsed.value.records,
+      null,
+      semanticSections.value.records,
+    );
     syncBlogArticleSelection(this.#documentView, this.#blog);
     this.#pendingMessage = "";
     this.#viewCache.clear();
@@ -295,7 +219,7 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     if (this.#currentView === "memory") {
       await this.#refreshMemoryIfNeeded();
     }
-    if (this.#currentView === "gallery") {
+    if (this.#currentView === "blog" || this.#currentView === "gallery") {
       await this.#refreshAttachmentInventoryIfNeeded();
     }
     if (this.#currentView === "capture") {
@@ -329,7 +253,7 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     if (this.#currentView === "memory") {
       await this.#refreshMemoryIfNeeded();
     }
-    if (this.#currentView === "gallery") {
+    if (this.#currentView === "blog" || this.#currentView === "gallery") {
       await this.#refreshAttachmentInventoryIfNeeded();
     }
     if (this.#currentView === "capture") {
@@ -421,6 +345,7 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
       this.#documentView = withAttachmentInventory(this.#documentView, attachments.value);
     }
     this.#viewCache.delete("gallery");
+    clearBlogCache(this.#viewCache);
     this.#pendingMessage = "";
   }
 
@@ -524,7 +449,7 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     document.title = config.title;
     this.#dom.siteTitle.textContent = config.title;
     this.#renderSourceOptions(config);
-    this.#renderTabs(config);
+    this.#dom.tabs.replaceChildren(...createTabButtons(config, this.#currentView));
   }
 
   #renderSourceOptions(config: SiteConfig): void {
@@ -536,10 +461,6 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     this.#dom.activeSourcePath.textContent = active
       ? `${active.file} / blog source`
       : "No Org source";
-  }
-
-  #renderTabs(config: SiteConfig): void {
-    this.#dom.tabs.replaceChildren(...createTabButtons(config, this.#currentView));
   }
 
   #updateActiveTab(): void {

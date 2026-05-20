@@ -32,6 +32,12 @@ jobs:
       - name: Typecheck
         run: npm run typecheck
 
+      - name: Harness
+        run: npm run harness
+
+      - name: Test
+        run: npm test
+
       - name: Build
         run: npm run build
 

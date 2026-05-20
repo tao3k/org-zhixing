@@ -3,6 +3,7 @@ import type {
   OrgizeAgentCaptureRequestDto,
   OrgizeAgendaViewResponseDto,
   OrgizeAttachmentInventoryResponseDto,
+  OrgizeSectionIndexRecordDto,
   OrgizeLintFindingDto,
   OrgizeViewIndexRecordDto,
 } from "orgize/dto";
@@ -21,6 +22,7 @@ export type ViewKey =
 
 export type OrgizeDocumentView = {
   sectionIndex: OrgizeViewIndexRecordDto[];
+  semanticSections: OrgizeSectionIndexRecordDto[];
   recordsByTag: ReadonlyMap<string, OrgizeViewIndexRecordDto[]>;
   recordsByRangeStart: ReadonlyMap<number, OrgizeViewIndexRecordDto>;
   agenda: AgendaItem[];
@@ -54,12 +56,15 @@ export type AgendaItem = {
 export const createDocumentView = (
   sectionIndex: OrgizeViewIndexRecordDto[],
   lint: OrgizeLintFindingDto[] | null = null,
+  semanticSections: OrgizeSectionIndexRecordDto[] = [],
 ): OrgizeDocumentView => {
   const recordsByTag = indexRecordsByTag(sectionIndex);
   const recordsByRangeStart = indexRecordsByRangeStart(sectionIndex);
   const agenda = indexAgendaItems(sectionIndex);
+  const notes = explicitOrFallbackNoteRecords(sectionIndex, recordsByTag);
   return {
     sectionIndex,
+    semanticSections,
     recordsByTag,
     recordsByRangeStart,
     agenda,
@@ -73,7 +78,7 @@ export const createDocumentView = (
     counts: {
       blog: recordsByTag.get("blog")?.length ?? 0,
       attachments: recordsByTag.get("attach")?.length ?? 0,
-      records: recordsByTag.get("record")?.length ?? 0,
+      records: notes.length,
       memory: recordsByTag.get("memory")?.length ?? 0,
       agenda: agenda.length,
     },
@@ -91,7 +96,7 @@ export const withAgendaView = (
   agendaRange,
   counts: {
     ...document.counts,
-    agenda: agendaView.cards.length,
+    agenda: agendaView.cards.length || document.agenda.length,
   },
 });
 
@@ -143,6 +148,9 @@ export const taggedRecords = (
   document: OrgizeDocumentView | null,
   tag: string,
 ): OrgizeViewIndexRecordDto[] => document?.recordsByTag.get(normalizeTag(tag)) ?? [];
+
+export const noteRecords = (document: OrgizeDocumentView | null): OrgizeViewIndexRecordDto[] =>
+  document ? explicitOrFallbackNoteRecords(document.sectionIndex, document.recordsByTag) : [];
 
 export const blogArticles = (document: OrgizeDocumentView | null): OrgizeViewIndexRecordDto[] =>
   articleRoots(taggedRecords(document, "blog"));
@@ -206,6 +214,18 @@ const indexAgendaItems = (records: OrgizeViewIndexRecordDto[]): AgendaItem[] => 
 };
 
 const normalizeTag = (tag: string): string => tag.toLowerCase();
+
+const explicitOrFallbackNoteRecords = (
+  records: OrgizeViewIndexRecordDto[],
+  recordsByTag: ReadonlyMap<string, OrgizeViewIndexRecordDto[]>,
+): OrgizeViewIndexRecordDto[] => {
+  const explicit = recordsByTag.get("record") ?? [];
+  return explicit.length > 0 ? explicit : records.filter(isNoteRecord);
+};
+
+const isNoteRecord = (record: OrgizeViewIndexRecordDto): boolean =>
+  record.title.trim().length > 0 &&
+  !record.effectiveTags.some((tag) => normalizeTag(tag) === "blog");
 
 const addPlanning = (
   items: AgendaItem[],
