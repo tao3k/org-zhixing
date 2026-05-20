@@ -51,6 +51,11 @@ label = "Notes"
 weight = 20
 
 [[ui.views]]
+id = "memory"
+label = "Memory"
+weight = 25
+
+[[ui.views]]
 id = "agenda"
 label = "Agenda"
 weight = 30

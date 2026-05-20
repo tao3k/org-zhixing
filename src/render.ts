@@ -3,12 +3,14 @@ import type { AgendaPanelKey } from "./agendaTypes";
 import type { AgendaModeKey } from "./config";
 import { renderAgenda } from "./agendaRender";
 import { renderAgentCapture } from "./captureRender";
+import { renderAgentMemory } from "./memoryRender";
 import { blogArticles, taggedRecords, type OrgizeDocumentView, type ViewKey } from "./model";
 
 type TimingStats = {
   parseMs?: number;
   agendaMs?: number;
   captureMs?: number;
+  memoryMs?: number;
   lintMs?: number;
   htmlMs?: number;
 };
@@ -67,6 +69,8 @@ export const renderView = ({
       );
     case "records":
       return renderRecords(taggedRecords(document, "record"), "Records");
+    case "memory":
+      return renderAgentMemory(document.agentMemory);
     case "agenda":
       return renderAgenda(document, agendaMode, agendaPanel, agendaRuleId);
     case "capture":
@@ -249,6 +253,7 @@ export const renderStats = (
     ? [
         timings.parseMs === undefined ? null : `parse ${formatMs(timings.parseMs)}`,
         timings.agendaMs === undefined ? null : `agenda ${formatMs(timings.agendaMs)}`,
+        timings.memoryMs === undefined ? null : `memory ${formatMs(timings.memoryMs)}`,
         timings.captureMs === undefined ? null : `capture ${formatMs(timings.captureMs)}`,
         timings.lintMs === undefined ? null : `lint ${formatMs(timings.lintMs)}`,
         timings.htmlMs === undefined ? null : `html ${formatMs(timings.htmlMs)}`,
@@ -260,6 +265,7 @@ export const renderStats = (
   return [
     `${document.counts.blog} blog`,
     `${document.counts.records} records`,
+    `${document.counts.memory} memory`,
     `${document.counts.agenda} agenda`,
     lintText,
     timingText,

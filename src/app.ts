@@ -35,10 +35,12 @@ import { createAgentCaptureRequest } from "./captureModel";
 import {
   createDocumentView,
   withAgendaView,
+  withAgentMemory,
   withCapturePlan,
   withLint,
   type OrgizeDocumentView,
 } from "./model";
+import { parseAgentMemoryText } from "./memoryModel";
 import { OrgizeSession, type OrgizeSessionOptions } from "./orgizeClient";
 import { renderAppShell } from "./appShell";
 import { renderStats, renderView } from "./render";
@@ -289,6 +291,9 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     if (this.#currentView === "agenda") {
       await this.#refreshAgendaIfNeeded();
     }
+    if (this.#currentView === "memory") {
+      await this.#refreshMemoryIfNeeded();
+    }
     if (this.#currentView === "capture") {
       await this.#refreshCaptureIfNeeded();
     }
@@ -316,6 +321,9 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
     }
     if (this.#currentView === "agenda") {
       await this.#refreshAgendaIfNeeded();
+    }
+    if (this.#currentView === "memory") {
+      await this.#refreshMemoryIfNeeded();
     }
     if (this.#currentView === "capture") {
       await this.#refreshCaptureIfNeeded();
@@ -363,6 +371,25 @@ class OrgZhixingApp implements OrgZhixingAppHandle {
       );
     }
     this.#clearAgendaCache();
+    this.#pendingMessage = "";
+  }
+
+  async #refreshMemoryIfNeeded(): Promise<void> {
+    if (this.#documentView?.agentMemory) {
+      return;
+    }
+    const version = this.#documentVersion;
+    this.#pendingMessage = "Projecting Agent memory...";
+    this.#render();
+    const memory = await this.#session.renderTimed("agentMemory");
+    if (version !== this.#documentVersion) {
+      return;
+    }
+    this.#timings = { ...this.#timings, memoryMs: memory.durationMs };
+    if (this.#documentView) {
+      this.#documentView = withAgentMemory(this.#documentView, parseAgentMemoryText(memory.value));
+    }
+    this.#viewCache.delete("memory");
     this.#pendingMessage = "";
   }
 

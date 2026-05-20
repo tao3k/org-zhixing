@@ -689,6 +689,257 @@ nav button.active {
   font-size: 0.84rem;
 }
 
+.memory-workbench {
+  display: grid;
+  gap: 16px;
+}
+
+.memory-header {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 18px;
+  align-items: start;
+  padding: 18px;
+  border: 1px solid #ccd7e5;
+  border-radius: 8px;
+  background: #ffffff;
+  box-shadow: 0 12px 34px rgb(22 33 49 / 6%);
+}
+
+.memory-header h2 {
+  margin: 0;
+  color: #101820;
+  font-size: 1.3rem;
+  line-height: 1.2;
+}
+
+.memory-header p:not(.eyebrow) {
+  max-width: 760px;
+  margin: 6px 0 0;
+  color: #5d6978;
+  font-size: 0.9rem;
+}
+
+.memory-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(64px, auto));
+  gap: 8px;
+  margin: 0;
+}
+
+.memory-metrics div {
+  min-width: 68px;
+  padding: 10px;
+  border: 1px solid #dce5ef;
+  border-radius: 8px;
+  background: #f8fbfd;
+}
+
+.memory-metrics dt {
+  color: #6f7d8f;
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.memory-metrics dd {
+  margin: 2px 0 0;
+  color: #172026;
+  font-size: 1.05rem;
+  font-weight: 900;
+}
+
+.memory-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(300px, 0.36fr);
+  gap: 16px;
+  align-items: start;
+}
+
+.memory-stream {
+  display: grid;
+  gap: 12px;
+}
+
+.memory-card {
+  display: grid;
+  gap: 12px;
+  padding: 16px;
+  border: 1px solid #d9e3ee;
+  border-left: 4px solid #2d759a;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.memory-card--suppressed {
+  border-left-color: #8f6c3d;
+  background: #fffaf2;
+}
+
+.memory-card--info {
+  border-left-color: #607086;
+}
+
+.memory-card header {
+  display: grid;
+  grid-template-columns: auto auto minmax(0, 1fr);
+  gap: 8px;
+  align-items: center;
+}
+
+.memory-card header span,
+.memory-card header strong {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  border-radius: 999px;
+  padding: 2px 8px;
+  font-size: 0.72rem;
+  font-weight: 900;
+}
+
+.memory-card header span {
+  color: #25516c;
+  background: #e4f1f8;
+}
+
+.memory-card header strong {
+  color: #315c3a;
+  background: #e0f3e4;
+}
+
+.memory-card header small {
+  min-width: 0;
+  overflow: hidden;
+  color: #6f7d8f;
+  font-size: 0.76rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.memory-card h3 {
+  margin: 0;
+  color: #111a22;
+  font-size: 1.05rem;
+  line-height: 1.25;
+}
+
+.memory-card p {
+  margin: 0;
+  color: #4d5870;
+  font-size: 0.88rem;
+  line-height: 1.5;
+}
+
+.memory-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.memory-tags span {
+  border-radius: 999px;
+  padding: 3px 8px;
+  color: #41516a;
+  background: #eef2f7;
+  font-size: 0.76rem;
+  font-weight: 760;
+}
+
+.memory-card-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+}
+
+.memory-card-grid section {
+  min-width: 0;
+  padding: 10px;
+  border: 1px solid #e0e7ef;
+  border-radius: 8px;
+  background: #fbfcfe;
+}
+
+.memory-card-grid h4 {
+  margin: 0 0 7px;
+  color: #314256;
+  font-size: 0.76rem;
+  text-transform: uppercase;
+}
+
+.memory-card-grid ul {
+  display: grid;
+  gap: 5px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-card-grid li,
+.memory-card-grid p {
+  color: #4f5d6d;
+  font-size: 0.78rem;
+  line-height: 1.4;
+}
+
+.memory-next {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 10px;
+  border: 1px solid #cfe0e7;
+  border-radius: 8px;
+  background: #f4fbfd;
+}
+
+.memory-next span {
+  color: #25516c;
+  font-size: 0.72rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.memory-inspector {
+  position: sticky;
+  top: 78px;
+  display: grid;
+  gap: 12px;
+}
+
+.memory-inspector-section {
+  padding: 14px;
+  border: 1px solid #d7e1eb;
+  border-radius: 8px;
+  background: #ffffff;
+}
+
+.memory-inspector-section h3 {
+  margin: 0;
+  color: #101820;
+  font-size: 1rem;
+}
+
+.memory-inspector-section p:not(.eyebrow) {
+  margin: 6px 0 0;
+  color: #566475;
+  font-size: 0.84rem;
+  line-height: 1.5;
+}
+
+.memory-inspector pre {
+  max-height: 460px;
+  margin: 0;
+  overflow: auto;
+  border-radius: 8px;
+  padding: 12px;
+  color: #263545;
+  background: #f2f5f8;
+  font-size: 0.76rem;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
 .agenda-list,
 .diagnostics {
   display: grid;
@@ -2884,6 +3135,9 @@ code {
   }
 
   .agenda-hero,
+  .memory-header,
+  .memory-layout,
+  .memory-card-grid,
   .agenda-command-center,
   .agenda-cockpit-grid,
   .agenda-card-main,
@@ -2902,6 +3156,10 @@ code {
 
   .agenda-ai-panel {
     order: -1;
+    position: static;
+  }
+
+  .memory-inspector {
     position: static;
   }
 

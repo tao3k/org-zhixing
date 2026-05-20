@@ -7,8 +7,9 @@ import type {
 } from "orgize/dto";
 import type { AgendaSettings } from "./config";
 import type { CaptureApplyPreview } from "./captureApplyPreview";
+import type { AgentMemoryView } from "./memoryModel";
 
-export type ViewKey = "blog" | "records" | "agenda" | "capture" | "diagnostics";
+export type ViewKey = "blog" | "records" | "memory" | "agenda" | "capture" | "diagnostics";
 
 export type OrgizeDocumentView = {
   sectionIndex: OrgizeViewIndexRecordDto[];
@@ -17,12 +18,14 @@ export type OrgizeDocumentView = {
   agenda: AgendaItem[];
   agendaView: OrgizeAgendaViewResponseDto | null;
   agendaRange: AgendaSettings | null;
+  agentMemory: AgentMemoryView | null;
   capturePlan: OrgizeAgentCapturePlanResponseDto | null;
   captureRequest: OrgizeAgentCaptureRequestDto | null;
   captureApplyPreview: CaptureApplyPreview | null;
   counts: {
     blog: number;
     records: number;
+    memory: number;
     agenda: number;
   };
   lint: OrgizeLintFindingDto[] | null;
@@ -50,12 +53,14 @@ export const createDocumentView = (
     agenda,
     agendaView: null,
     agendaRange: null,
+    agentMemory: null,
     capturePlan: null,
     captureRequest: null,
     captureApplyPreview: null,
     counts: {
       blog: recordsByTag.get("blog")?.length ?? 0,
       records: recordsByTag.get("record")?.length ?? 0,
+      memory: recordsByTag.get("memory")?.length ?? 0,
       agenda: agenda.length,
     },
     lint,
@@ -73,6 +78,18 @@ export const withAgendaView = (
   counts: {
     ...document.counts,
     agenda: agendaView.cards.length,
+  },
+});
+
+export const withAgentMemory = (
+  document: OrgizeDocumentView,
+  agentMemory: AgentMemoryView,
+): OrgizeDocumentView => ({
+  ...document,
+  agentMemory,
+  counts: {
+    ...document.counts,
+    memory: agentMemory.cards.length,
   },
 });
 

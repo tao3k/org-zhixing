@@ -117,14 +117,14 @@ export class OrgizeSession {
     });
   }
 
-  render(format: "html" | "markdown" | "latex" | "org"): Promise<string> {
+  render(format: OrgizeRenderFormat): Promise<string> {
     return this.#request<string>({
       command: "render",
       format,
     });
   }
 
-  renderTimed(format: "html" | "markdown" | "latex" | "org"): Promise<TimedResult<string>> {
+  renderTimed(format: OrgizeRenderFormat): Promise<TimedResult<string>> {
     return this.#requestTimed<string>({
       command: "render",
       format,

@@ -216,6 +216,7 @@ const stripLeadingSlash = (path: string): string => path.replace(/^\/+/, "");
 const defaultMenu = (): MenuItem[] => [
   { name: "Blog", view: "blog", weight: 10 },
   { name: "Notes", view: "records", weight: 20 },
+  { name: "Memory", view: "memory", weight: 25 },
   { name: "Agenda", view: "agenda", weight: 30 },
 ];
 
@@ -333,6 +334,7 @@ const readAgendaMode = (value: unknown, fallback: AgendaModeKey): AgendaModeKey 
 const isViewKey = (value: unknown): value is ViewKey =>
   value === "blog" ||
   value === "records" ||
+  value === "memory" ||
   value === "agenda" ||
   value === "capture" ||
   value === "diagnostics";
