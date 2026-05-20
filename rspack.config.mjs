@@ -1,11 +1,19 @@
+import { existsSync } from "node:fs";
 import { dirname, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
 import rspack from "@rspack/core";
 
 const projectRoot = dirname(fileURLToPath(import.meta.url));
-const orgizeRoot = resolve(projectRoot, "../..");
-const orgizeWasmRoot = resolve(orgizeRoot, "wasm");
+const orgizePackageRoot = resolve(projectRoot, "node_modules/orgize");
 const publicRoot = resolve(projectRoot, "public");
+const orgizePackageWatchFiles = existsSync(orgizePackageRoot)
+  ? [
+      resolve(orgizePackageRoot, "worker.js"),
+      resolve(orgizePackageRoot, "dto.js"),
+      resolve(orgizePackageRoot, "package.json"),
+      resolve(orgizePackageRoot, "dist/**/*"),
+    ]
+  : [];
 
 export default (_env, argv) => {
   const mode = argv.mode === "production" ? "production" : "development";
@@ -82,13 +90,7 @@ export default (_env, argv) => {
         publicPath: "/",
         watch: true,
       },
-      watchFiles: [
-        resolve(publicRoot, "**/*.{org,toml}"),
-        resolve(orgizeWasmRoot, "worker.js"),
-        resolve(orgizeWasmRoot, "dto.js"),
-        resolve(orgizeWasmRoot, "package.json"),
-        resolve(orgizeWasmRoot, "dist/**/*"),
-      ],
+      watchFiles: [resolve(publicRoot, "**/*.{org,toml}"), ...orgizePackageWatchFiles],
       client: {
         overlay: true,
         progress: true,

@@ -2,7 +2,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { performance } from "node:perf_hooks";
 import { fileURLToPath } from "node:url";
 
-import init, { Org } from "../../../wasm/dist/orgize.js";
+import init, { Org } from "orgize";
 
 const args = new Map(
   process.argv
@@ -17,7 +17,7 @@ const warmups = numberArg("warmups", 3);
 const repeat = numberArg("repeat", 1);
 const sourceFile = args.get("source") ?? "blog/org-zhixing-demo.org";
 const sourcePath = new URL(`../public/${sourceFile}`, import.meta.url);
-const wasmPath = new URL("../../../wasm/dist/orgize_bg.wasm", import.meta.url);
+const wasmPath = fileURLToPath(import.meta.resolve("orgize/wasm"));
 const artifactPath = new URL("../.cache/perf/org-zhixing-wasm.json", import.meta.url);
 
 const rawSource = await readFile(sourcePath, "utf8");
